@@ -18,6 +18,13 @@ public partial class MainForm {
  Label title;
  readonly bool[] hiddenChannels=new bool[16];
  Button channelPicker;
+ readonly Button[] layerButtons=new Button[7];
+ void SelectMix(int bus){if(bus==monitorBus)return;foreach(var m in mappings)if(m.Target=="MixFader")engine.Runtimes.Remove(m);
+    monitorBus=bus;
+    foreach(var other in layerButtons){other.BackColor=Theme.Panel;other.ForeColor=Theme.Text;}
+    layerButtons[bus].BackColor=Theme.Cyan;layerButtons[bus].ForeColor=Theme.Bg;
+    queries.Clear();nextSync=DateTime.MinValue;RefreshVisuals(true);
+   }
  int monitorBus;
  string LevelPath(int ch,bool master){
   if(monitorBus!=0)return Mapping.MonitorPath(ch,monitorBus,master);
@@ -64,15 +71,10 @@ public partial class MainForm {
     }
   mixerPage.Controls.Add(channels);
   var layers=new FlowLayoutPanel{Dock=DockStyle.Right,Width=98,FlowDirection=FlowDirection.TopDown,WrapContents=false,Padding=new Padding(4,8,0,0)};
-  var layerButtons=new Button[7];
+
   for(int i=0;i<layerButtons.Length;i++){
    int bus=i;
-   var button=Theme.Button(i==0?"Main LR":"Bus "+i,()=>{
-    monitorBus=bus;
-    foreach(var other in layerButtons){other.BackColor=Theme.Panel;other.ForeColor=Theme.Text;}
-    layerButtons[bus].BackColor=Theme.Cyan;layerButtons[bus].ForeColor=Theme.Bg;
-    queries.Clear();nextSync=DateTime.MinValue;RefreshVisuals(true);
-   },i==0);
+   var button=Theme.Button(i==0?"Main LR":"Bus "+i,()=>SelectMix(bus),i==0);
    button.Width=84;layerButtons[i]=button;layers.Controls.Add(button);
   }
   mixerPage.Controls.Add(layers);
@@ -105,7 +107,7 @@ public partial class MainForm {
   learnStatus=Theme.Label(L.T("Подвигайте контрол после\nнажатия «Обучить MIDI»."),9);learnStatus.MaximumSize=new Size(185,60);AddField(fields,"MIDI Learn",learnStatus);
   editName=new TextBox{Dock=DockStyle.Fill};AddField(fields,L.T("Название"),editName);
   editEnabled=new CheckBox{Text=L.T("Включено"),Checked=true,AutoSize=true};AddField(fields,L.T("Назначение"),editEnabled);
-  var targets=new List<string>{"Fader",L.T("Уровень канала"),"Gain",L.T("Gain физ. входа"),"Mute","Mute","Solo","Solo","Main","Main LR","Bank+",L.T("Следующий банк"),"Bank-",L.T("Предыдущий банк")};for(int b=1;b<=6;b++){targets.AddRange(new[]{"Send"+b,"CH → AUX "+b,"Aux"+b,"AUX "+b+" Master","Mute"+b,"Bus "+b+" Mute","Solo"+b,"Bus "+b+" Solo"});}editTarget=Choices(targets.ToArray());AddField(fields,L.T("Управляет"),editTarget);
+  var targets=new List<string>{"Fader",L.T("Уровень канала"),"Gain",L.T("Gain физ. входа"),"Mute","Mute","Solo","Solo","Main","Main LR","Bank+",L.T("Следующий банк"),"Bank-",L.T("Предыдущий банк")};targets.AddRange(new[]{"MixFader",L.T("Фейдер выбранного микса"),"Mix0","→ Main LR","Mix+",L.T("Следующий микс"),"Mix-",L.T("Предыдущий микс")});for(int b=1;b<=6;b++){targets.AddRange(new[]{"Mix"+b,"→ Bus "+b});targets.AddRange(new[]{"Send"+b,"CH → AUX "+b,"Aux"+b,"AUX "+b+" Master","Mute"+b,"Bus "+b+" Mute","Solo"+b,"Bus "+b+" Solo"});}editTarget=Choices(targets.ToArray());AddField(fields,L.T("Управляет"),editTarget);
   editChannel=Number(1,16);AddField(fields,L.T("Канал / вход"),editChannel);
   editMode=Choices("Pickup",L.T("Подхват уровня"),"Absolute",L.T("Абсолютный"),"Relative2",L.T("Энкодер ± (2)"),"RelativeOffset",L.T("Энкодер центр 64"),"RelativeSign",L.T("Энкодер ± (Sign)"),"Toggle",L.T("Переключение"),"Gate",L.T("Пока нажата"),"Increase",L.T("Прибавить"),"Decrease",L.T("Убавить"));AddField(fields,L.T("Режим"),editMode);
   editMin=Number(-90,60,1);editMax=Number(-90,60,1);editStep=Number(.1m,12,1);AddField(fields,L.T("От, dB"),editMin);AddField(fields,L.T("До, dB"),editMax);AddField(fields,L.T("Шаг, dB"),editStep);
@@ -113,7 +115,7 @@ public partial class MainForm {
   editMidi=Number(1,16);editNumber=Number(0,127);editBank=Number(0,8);AddField(fields,L.T("MIDI-канал"),editMidi);AddField(fields,L.T("Номер"),editNumber);AddField(fields,L.T("Банк (0=все)"),editBank);
   var apply=Theme.Button(L.T("Применить"),()=>Guard(()=>ApplyInspector(true)),true);apply.Dock=DockStyle.Fill;AddField(fields,"",apply);
   AddField(fields,"",Theme.Button(L.T("Отменить правки"),LoadInspector));
-  editTarget.SelectedValueChanged+=(s,e)=>{if(loadingInspector)return;string target=Convert.ToString(editTarget.SelectedValue);if(target=="Gain"){editMin.Value=-12;editMax.Value=30;editMode.SelectedValue="Pickup";}else if(Mapping.IsSwitch(target))editMode.SelectedValue="Toggle";else if(target=="Fader"||target=="Main"||Mapping.IsMonitor(target)){editMin.Value=-90;editMax.Value=0;editMode.SelectedValue="Pickup";}};
+  editTarget.SelectedValueChanged+=(s,e)=>{if(loadingInspector)return;string target=Convert.ToString(editTarget.SelectedValue);if(target=="Gain"){editMin.Value=-12;editMax.Value=30;editMode.SelectedValue="Pickup";}else if(Mapping.IsSwitch(target))editMode.SelectedValue="Toggle";else if(target=="MixFader"||target=="Fader"||target=="Main"||Mapping.IsMonitor(target)){editMin.Value=-90;editMax.Value=0;editMode.SelectedValue="Pickup";}};
  }
  void AddField(TableLayoutPanel t,string label,Control control){int row=t.RowCount++;t.RowStyles.Add(new RowStyle(SizeType.AutoSize));var l=Theme.Label(label,9);l.ForeColor=Theme.Muted;l.Margin=new Padding(0,10,6,4);control.Margin=new Padding(0,5,0,5);t.Controls.Add(l,0,row);t.Controls.Add(control,1,row);}
  void LoadInspector(){if(editName==null)return;var m=Selected();if(m==null)return;loadingInspector=true;try{inspectorTitle.Text=m.Name;editName.Text=m.Name;editEnabled.Checked=m.Enabled;editTarget.SelectedValue=m.Target;editMode.SelectedValue=m.Mode;editKind.SelectedValue=m.Kind;editChannel.Value=m.Channel;editBank.Value=m.Bank;editMidi.Value=m.MidiChannel;editNumber.Value=m.Number;editMin.Value=(decimal)m.Min;editMax.Value=(decimal)m.Max;editStep.Value=(decimal)m.Step;learnStatus.Text=m.MidiLabel;}finally{loadingInspector=false;}}
@@ -143,7 +145,7 @@ public partial class MainForm {
   }
  }
  void RefreshVisuals(bool force){if(footer==null)return;DateTime now=DateTime.UtcNow;if(!force&&now<nextVisual)return;nextVisual=now.AddMilliseconds(40);
-  string model=mixer.Live?mixer.Model.Name:"";title.Text=model==""?"AIR MIDI Bridge":"AIR MIDI Bridge · "+model;Text=title.Text+" · 1.0.0";connect.Text=mixer.Opened?(L.English?"Disconnect":"Отключить"):(L.English?"Connect":"Подключить");connectionLabel.Text=mixer.Live?"● "+mixer.Model.Name+(L.English?" connected":" подключён"):(L.English?"● Offline":"● Нет связи");connectionLabel.ForeColor=mixer.Live?Theme.Green:Theme.Muted;
+  string model=mixer.Live?mixer.Model.Name:"";title.Text=model==""?"AIR MIDI Bridge":"AIR MIDI Bridge · "+model;Text=title.Text+" · 1.1.0";connect.Text=mixer.Opened?(L.English?"Disconnect":"Отключить"):(L.English?"Connect":"Подключить");connectionLabel.Text=mixer.Live?"● "+mixer.Model.Name+(L.English?" connected":" подключён"):(L.English?"● Offline":"● Нет связи");connectionLabel.ForeColor=mixer.Live?Theme.Green:Theme.Muted;
   armed.Text=armed.Checked?L.T("УПРАВЛЕНИЕ ВКЛЮЧЕНО"):L.T("ТЕСТОВЫЙ РЕЖИМ");armed.BackColor=armed.Checked?Color.FromArgb(15,94,57):Theme.Panel;armed.ForeColor=armed.Checked?Theme.Text:Theme.Amber;
   viewFirst.BackColor=viewStart==0?Theme.Cyan:Theme.Panel;viewFirst.ForeColor=viewStart==0?Theme.Bg:Theme.Text;viewSecond.BackColor=viewStart==8?Theme.Cyan:Theme.Panel;viewSecond.ForeColor=viewStart==8?Theme.Bg:Theme.Text;
   string profile=profilePath==null?L.T("Профиль не сохранён"):Path.GetFileNameWithoutExtension(profilePath);if(shownProfile!=profile){profileLabel.Text=profile;shownProfile=profile;}

@@ -13,7 +13,7 @@ public static class UiTests {
  static object Call(object obj,string name,params object[] args){return obj.GetType().GetMethod(name,BindingFlags.NonPublic|BindingFlags.Instance).Invoke(obj,args);}
  public static void Run(){L.English=false;using(var form=new MainForm()){
   form.Show();Application.DoEvents();
-  Check(form.Text.EndsWith("1.0.0"),"Version and construction");
+  Check(form.Text.EndsWith("1.1.0"),"Version and construction");
   Check(form.FormBorderStyle==FormBorderStyle.None,"Native light caption removed");
   Check(MainForm.ResizeHit(new Point(1,1),new Size(1200,800),6)==13&&MainForm.ResizeHit(new Point(1198,798),new Size(1200,800),6)==17,"Resize corners");
   Check(MainForm.ResizeHit(new Point(1,400),new Size(1200,800),6)==10&&MainForm.ResizeHit(new Point(600,798),new Size(1200,800),6)==15,"Resize edges");
@@ -65,6 +65,19 @@ public static class UiTests {
    Check(send.Validate()==null && send.Address=="/ch/01/mix/0"+bus+"/level" && sim.ContainsKey(send.Address),"Monitor send "+bus);
    Check(master.Validate()==null && master.Address=="/bus/"+bus+"/mix/fader" && sim.ContainsKey(master.Address) && MixerModel.Find("XR18").Supports(master.Address),"Monitor master "+bus);
   }
+  var follow=new Mapping{Target="MixFader",Bank=0,Mode="Pickup",Number=55};
+  mappings.Clear();mappings.Add(follow);
+  mappings.Add(new Mapping{Target="Mix+",Bank=0,Kind="Note",Number=56});
+  Call(form,"SelectMix",0);
+  var cc=new MidiEvent{Kind="CC",Channel=1,Number=55,Value=0};
+  Call(form,"HandleMidi",cc);
+  cc.Value=127;Call(form,"HandleMidi",cc);
+  var press=new MidiEvent{Kind="Note",Channel=1,Number=56,Value=100};
+  Call(form,"HandleMidi",press);Call(form,"HandleMidi",press);
+  Check((int)Get(form,"monitorBus")==1,"Held mix button advances once");
+  string path=follow.AddressInMix(1);sim[path]=new State{Value=.4,Time=DateTime.UtcNow};
+  Call(form,"HandleMidi",cc);Check(sim[path].Value==.4,"Changed mix waits for pickup");
+  cc.Value=0;Call(form,"HandleMidi",cc);Check(sim[path].Value!=.4,"Crossing takes over selected bus");
   form.Close();
  }Console.WriteLine("TOTAL UI: "+checks+" passed. No real mixer was connected.");}
  static string gridColumn(MainForm form,string prop){var grid=(DataGridView)Get(form,"grid");foreach(DataGridViewColumn c in grid.Columns)if(c.DataPropertyName==prop)return c.HeaderText;return null;}

@@ -14,6 +14,8 @@ AIR MIDI Bridge позволяет управлять цифровым пуль�
 
 С MIDI-контроллера можно менять посыл отдельного канала в AUX 1–6 и общую громкость каждой шины. Например, CH → AUX 2 регулирует уровень выбранного канала во втором мониторе, а AUX 2 Master — громкость всего монитора. На экране выберите Bus 1–6 справа для управления монитором. На мастере шины доступны Mute и Solo. Обе кнопки можно назначить через MIDI Learn.
 
+В версии 1.1 назначьте ползунку **Фейдер выбранного микса** в режиме подхвата, а кнопкам — **→ Main LR**, **→ Bus 2** или **Следующий микс**. При смене микса ползунок подхватывает уровень заново. Переключение и быстрое движение фейдера проверены пользователем на XR18 с M-VAVE.
+
 ### Первый фейдер
 
 1. Подключите MIDI-контроллер к компьютеру и убедитесь, что компьютер и пульт находятся в одной сети. Для сборки из исходников откройте Windows PowerShell в папке проекта и выполните `.\build.ps1`. Нужен .NET Framework 4.x с компилятором C#. Запустите **MR18-MIDI.exe**. Имя файла осталось от первой версии для MR18.
@@ -55,6 +57,8 @@ AIR MIDI Bridge позволяет управлять цифровым пуль�
 AIR MIDI Bridge lets you control a Midas M AIR or Behringer X AIR mixer from a MIDI controller. You could map a slider to the vocal channel and use the button beside it to mute the singer’s mic between songs. The controller connects to your Windows PC, which sends OSC commands to the mixer over the network.
 
 You can control AUX 1–6 from MIDI, including individual channel sends and each bus master level. For example, CH → AUX 2 adjusts one channel in the second monitor mix, while AUX 2 Master adjusts the whole mix. On screen, select Bus 1–6 on the right to mix monitors. Each bus master has Mute and Solo, both assignable via MIDI Learn.
+
+In 1.1, assign **Selected mix fader** in Pickup mode and map buttons to **→ Main LR**, **→ Bus 2** or **Next mix**. Switching mixes resets pickup for that fader. A user checked mix switching and fast fader movement on an XR18 with an M-VAVE controller.
 
 ### Map your first fader
 

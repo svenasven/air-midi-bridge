@@ -23,6 +23,8 @@ public class Mapping {
  public static bool IsBusSwitch(string target){return target!=null && System.Text.RegularExpressions.Regex.IsMatch(target,@"^(Mute|Solo)[1-6]$");}
  public static bool IsSwitch(string target){return target=="Mute"||target=="Solo"||IsBusSwitch(target);}
  public static string BusSwitch(int bus,string target){return target.StartsWith("Mute")?"/bus/"+bus+"/mix/on":"/-stat/solosw/"+(21+bus);}
+ public static bool IsMixSelect(string target){return target!=null && System.Text.RegularExpressions.Regex.IsMatch(target,@"^Mix[0-6+-]$");}
+ public string AddressInMix(int bus){return Target=="MixFader" && bus!=0?MonitorPath(Channel,bus,false):Address;}
  public static bool IsMonitor(string target){
   return target!=null && System.Text.RegularExpressions.Regex.IsMatch(target,@"^(Send|Aux)[1-6]$");
  }
@@ -42,11 +44,11 @@ public class Mapping {
  public string Validate() {
   if(Bank<0 || Bank>8 || MidiChannel<1 || MidiChannel>16 || Number<0 || Number>127 || Channel<1 || Channel>16) return L.T("Банк 0–8, MIDI-канал 1–16, номер 0–127, канал MR18 1–16.");
   if(!new[]{"CC","Note","Pitch"}.Contains(Kind)) return L.T("Неизвестный тип MIDI.");
-  if(!IsBusSwitch(Target)&&!IsMonitor(Target)&&!new[]{"Fader","Gain","Mute","Solo","Main","Bank+","Bank-"}.Contains(Target)) return L.T("Неизвестная цель.");
+  if(!IsMixSelect(Target)&&Target!="MixFader"&&!IsBusSwitch(Target)&&!IsMonitor(Target)&&!new[]{"Fader","Gain","Mute","Solo","Main","Bank+","Bank-"}.Contains(Target)) return L.T("Неизвестная цель.");
   if(!new[]{"Pickup","Absolute","Relative2","RelativeOffset","RelativeSign","Toggle","Gate","Increase","Decrease"}.Contains(Mode)) return L.T("Неизвестный режим.");
   if(double.IsNaN(Min)||double.IsNaN(Max)||double.IsNaN(Step)||double.IsInfinity(Min)||double.IsInfinity(Max)||double.IsInfinity(Step)||Step<=0||Step>12) return L.T("Шаг должен быть больше 0 и не более 12 dB.");
   if(IsSwitch(Target)) {if(Mode=="Gate"&&Bank!=0)return L.T("Для Gate используйте банк 0, чтобы отпускание кнопки работало при смене банка.");return (Mode=="Toggle" || Mode=="Gate") ? null : L.T("Для Mute/Solo выберите Toggle или Gate.");}
-  if(Target.StartsWith("Bank")) return null;
+  if(IsMixSelect(Target))return Kind=="Pitch"?"CC / Note":null;if(Target.StartsWith("Bank")) return null;
   double lo=Target=="Gain"?-12:-90, hi=Target=="Gain"?60:10;
   if(Min<lo||Max>hi||Min>=Max) return L.T("Диапазон ") + Target + ": " + lo + "…" + hi + L.T(" dB; минимум должен быть меньше максимума.");
   if(Mode=="Toggle"||Mode=="Gate") return L.T("Для уровня выберите Pickup, Absolute, Relative или Increase/Decrease.");
@@ -261,7 +263,7 @@ public partial class MainForm : Form {
  bool midiOpen,learning;Mapping learnTarget;int lines;string profilePath;bool closing;
  public MainForm(){
   commands=new CommandBatch((path,value)=>{if(armed.Checked&&mixer.Live)mixer.SetValue(path,value);});
-  Text="AIR MIDI Bridge · 1.0.0";Size=new Size(1460,940);MinimumSize=new Size(1180,780);StartPosition=FormStartPosition.CenterScreen;Font=new Font("Segoe UI",10);
+  Text="AIR MIDI Bridge · 1.1.0";Size=new Size(1460,940);MinimumSize=new Size(1180,780);StartPosition=FormStartPosition.CenterScreen;Font=new Font("Segoe UI",10);
   BuildInterface();
   connect.Click+=(s,e)=>Guard(ToggleMixer);midiButton.Click+=(s,e)=>Guard(ToggleMidi);
   armed.CheckedChanged+=(s,e)=>{
@@ -287,7 +289,7 @@ public partial class MainForm : Form {
  void Disarm(){commands.Clear();armed.Checked=false;}
  bool Commit(){
   if(!grid.EndEdit())return false;BindingContext[mappings].EndCurrentEdit();
-  foreach(var m in mappings){if(m.Enabled&&mixer.Model!=null&&!m.Target.StartsWith("Bank")&&!mixer.Model.Supports(m.Address)){Write("Unsupported mapping on "+mixer.Model.Name+": "+m.Name);return false;}string err=m.Validate();if(err!=null){Write(m.Name+": "+err);return false;}}
+  foreach(var m in mappings){if(m.Enabled&&mixer.Model!=null&&!m.Target.StartsWith("Bank")&&!Mapping.IsMixSelect(m.Target)&&!mixer.Model.Supports(m.Address)){Write("Unsupported mapping on "+mixer.Model.Name+": "+m.Name);return false;}string err=m.Validate();if(err!=null){Write(m.Name+": "+err);return false;}}
   var active=mappings.Where(m=>m.Enabled).ToList();
   for(int a=0;a<active.Count;a++)for(int b=a+1;b<active.Count;b++){
    var x=active[a];var y=active[b];if(x.MidiChannel==y.MidiChannel&&x.Kind==y.Kind&&(x.Kind=="Pitch"||x.Number==y.Number)&&(x.Bank==0||y.Bank==0||x.Bank==y.Bank)){Write(L.T("Один MIDI-контрол назначен дважды в активных банках: ")+x.Name+" / "+y.Name);return false;}
@@ -320,7 +322,7 @@ public partial class MainForm : Form {
    mixer.Poll();DateTime now=DateTime.UtcNow;
    if(mixer.Opened){
     if(now>=nextInfo){mixer.Send("/xinfo");if(mixer.Live)mixer.Send("/xremote");nextInfo=now.AddSeconds(3);}
-    if(mixer.Live&&now>=nextSync&&queries.Count==0){foreach(string path in DisplayPaths().Concat(mappings.Where(m=>m.Enabled&&!m.Target.StartsWith("Bank")&&m.Validate()==null).Select(m=>m.Address)).Where(mixer.SupportsAddress).Distinct())queries.Enqueue(path);nextSync=now.AddSeconds(2);}
+    if(mixer.Live&&now>=nextSync&&queries.Count==0){foreach(string path in DisplayPaths().Concat(mappings.Where(m=>m.Enabled&&!m.Target.StartsWith("Bank")&&!Mapping.IsMixSelect(m.Target)&&m.Validate()==null).Select(m=>m.AddressInMix(monitorBus))).Where(mixer.SupportsAddress).Distinct())queries.Enqueue(path);nextSync=now.AddSeconds(2);}
     if(queries.Count>0&&mixer.Live&&now>=nextQuery){mixer.Send(queries.Dequeue());nextQuery=now.AddMilliseconds(20);}
    }
    if(armed.Checked&&!mixer.Live){Disarm();engine.Reset();Write(L.T("Нет подтверждения MR18. Управление отключено; повторное включение вручную."));}
@@ -337,25 +339,25 @@ public partial class MainForm : Form {
  void HandleMidi(MidiEvent e){
   latestMidiText=e.ToString();
   if(learning){if(e.Kind=="Note"&&!e.Pressed)return;learning=false;if(!mappings.Contains(learnTarget))return;learnTarget.Kind=e.Kind;learnTarget.MidiChannel=e.Channel;learnTarget.Number=e.Number;
-   if(e.Kind=="Note" && !Mapping.IsSwitch(learnTarget.Target)&&!learnTarget.Target.StartsWith("Bank"))learnTarget.Mode="Increase";
+   if(e.Kind=="Note" && !Mapping.IsSwitch(learnTarget.Target)&&!Mapping.IsMixSelect(learnTarget.Target)&&!learnTarget.Target.StartsWith("Bank"))learnTarget.Mode="Increase";
    mappings.ResetBindings();engine.Reset();LoadInspector();Write("LEARN: "+learnTarget.Name+" ← "+e);return;
   }
   if(grid.IsCurrentCellInEditMode)return;
   var matches=mappings.Where(m=>m.Enabled&&(m.Bank==0||m.Bank==(int)bank.Value)&&e.Matches(m)&&m.Validate()==null).ToList();
   if(matches.Count>1){Write(L.T("Конфликт назначений для ")+e+L.T(". Событие пропущено."));return;}
   foreach(var m in matches){
-   if(m.Target.StartsWith("Bank")){Runtime rt;if(!engine.Runtimes.TryGetValue(m,out rt)){rt=new Runtime();engine.Runtimes[m]=rt;}bool press=e.Pressed&&!rt.Down;rt.Down=e.Pressed;if(press)bank.Value=(decimal)Osc.Clamp((int)bank.Value+(m.Target=="Bank+"?1:-1),1,8);continue;}
-   if(mixer.Model!=null&&!mixer.Model.Supports(m.Address))continue;
+   if(Mapping.IsMixSelect(m.Target)){Runtime key;if(!engine.Runtimes.TryGetValue(m,out key)){key=new Runtime();engine.Runtimes[m]=key;}bool rising=e.Pressed&&!key.Down;key.Down=e.Pressed;if(rising){int bus=m.Target=="Mix+"?Math.Min(6,monitorBus+1):m.Target=="Mix-"?Math.Max(0,monitorBus-1):m.Target[3]-'0';SelectMix(bus);}continue;}if(m.Target.StartsWith("Bank")){Runtime rt;if(!engine.Runtimes.TryGetValue(m,out rt)){rt=new Runtime();engine.Runtimes[m]=rt;}bool press=e.Pressed&&!rt.Down;rt.Down=e.Pressed;if(press)bank.Value=(decimal)Osc.Clamp((int)bank.Value+(m.Target=="Bank+"?1:-1),1,8);continue;}
+   string address=m.AddressInMix(monitorBus);if(mixer.Model!=null&&!mixer.Model.Supports(address))continue;
    double current;double? state=null;
-   if(armed.Checked){if(mixer.Fresh(m.Address,out current))state=current;}
-   else {State simulated;if(simulation.TryGetValue(m.Address,out simulated))state=simulated.Value;else if(mixer.Fresh(m.Address,out current))state=current;else state=m.Target.StartsWith("Mute")?1:Engine.FromDb(m,m.Target=="Gain"?0:-30);}
+   if(armed.Checked){if(mixer.Fresh(address,out current))state=current;}
+   else {State simulated;if(simulation.TryGetValue(address,out simulated))state=simulated.Value;else if(mixer.Fresh(address,out current))state=current;else state=m.Target.StartsWith("Mute")?1:Engine.FromDb(m,m.Target=="Gain"?0:-30);}
    double? value=engine.Calculate(m,e,state);
-   if(!value.HasValue){if(armed.Checked&&!state.HasValue)mixer.Send(m.Address);return;}
+   if(!value.HasValue){if(armed.Checked&&!state.HasValue)mixer.Send(address);return;}
    bool discrete=Mapping.IsSwitch(m.Target);object payload=discrete?(object)(int)value.Value:(object)(float)value.Value;
-   if(armed.Checked){if(!mixer.Live)return;commands.Add(m.Address,payload,discrete);mixer.Values[m.Address]=new State{Value=value.Value,Time=DateTime.UtcNow};}
-   else simulation[m.Address]=new State{Value=value.Value,Time=DateTime.UtcNow};
-   string message=(armed.Checked?"LIVE ":"TEST ")+m.Name+" → "+m.Address+" "+(discrete?Convert.ToString(payload):Engine.ToDb(m,value.Value).ToString("0.0",CultureInfo.InvariantCulture)+" dB");
-   if(discrete)Write(message);else continuousLog[m.Address]=message;
+   if(armed.Checked){if(!mixer.Live)return;commands.Add(address,payload,discrete);mixer.Values[address]=new State{Value=value.Value,Time=DateTime.UtcNow};}
+   else simulation[address]=new State{Value=value.Value,Time=DateTime.UtcNow};
+   string message=(armed.Checked?"LIVE ":"TEST ")+m.Name+" → "+address+" "+(discrete?Convert.ToString(payload):Engine.ToDb(m,value.Value).ToString("0.0",CultureInfo.InvariantCulture)+" dB");
+   if(discrete)Write(message);else continuousLog[address]=message;
   }
  }
 }

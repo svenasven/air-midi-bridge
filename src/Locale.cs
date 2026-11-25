@@ -4,7 +4,7 @@ using System.IO;
 namespace MR18Midi {
 public static class L {
  public static bool English;
- public static readonly Dictionary<string,string> Catalog=new Dictionary<string,string>{
+ public static readonly Dictionary<string,string> Catalog=new Dictionary<string,string>{ {"Фейдер выбранного микса","Selected mix fader"},{"Следующий микс","Next mix"},{"Предыдущий микс","Previous mix"},
   {"Вход ","Input "},
   {"Назначение","Mapping"},
   {"Банк 0–8, MIDI-канал 1–16, номер 0–127, канал MR18 1–16.","Bank 0–8, MIDI channel 1–16, number 0–127, MR18 channel 1–16."},
