@@ -32,8 +32,8 @@ public partial class MainForm {
   closeWindow=CaptionButton("×",L.T("Закрыть"),Close);closeWindow.FlatAppearance.MouseOverBackColor=Color.FromArgb(166,45,56);
   windowButtons.Controls.AddRange(new Control[]{minimizeWindow,maximizeWindow,closeWindow});
   var content=new FlowLayoutPanel{Dock=DockStyle.Left,Width=620,WrapContents=false,BackColor=Theme.Bg};
-  var title=Theme.Label("AIR MIDI Bridge",21,true);title.Margin=new Padding(2,4,32,4);content.Controls.Add(title);
-  mixerTab=Theme.Button(L.T("Микшер"),()=>ShowPage(false));controllerTab=Theme.Button(L.T("Контроллеры"),()=>ShowPage(true));content.Controls.Add(mixerTab);content.Controls.Add(controllerTab);var version=Theme.Label("0.5 beta",9);version.ForeColor=Theme.Muted;content.Controls.Add(version);
+  title=Theme.Label("AIR MIDI Bridge",21,true);title.Margin=new Padding(2,4,32,4);content.Controls.Add(title);
+  mixerTab=Theme.Button(L.T("Микшер"),()=>ShowPage(false));controllerTab=Theme.Button(L.T("Контроллеры"),()=>ShowPage(true));content.Controls.Add(mixerTab);content.Controls.Add(controllerTab);var version=Theme.Label("1.0.0",9);version.ForeColor=Theme.Muted;content.Controls.Add(version);
   var languageButtons=BuildLanguageButtons();languageButtons.Dock=DockStyle.Right;header.Controls.Add(content);header.Controls.Add(languageButtons);header.Controls.Add(windowButtons);
   foreach(Control area in new Control[]{header,content,title,version}){
    area.MouseDown+=(s,e)=>{if(e.Button!=MouseButtons.Left)return;if(e.Clicks==2){ToggleMaximized();return;}ReleaseCapture();SendMessage(Handle,0x00A1,(IntPtr)2,IntPtr.Zero);};

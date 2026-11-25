@@ -12,6 +12,8 @@
 
 AIR MIDI Bridge позволяет управлять цифровым пультом Midas M AIR или Behringer X AIR с MIDI-контроллера. Например, можно назначить ползунок на громкость вокала, а соседнюю кнопку — на отключение того же канала. Контроллер подключается к компьютеру с Windows, а компьютер отправляет команды пульту по сети через OSC.
 
+В версии 1.0.0 выберите Bus 1–6 справа для управления монитором. На мастере шины доступны Mute и Solo. Обе кнопки можно назначить через MIDI Learn.
+
 ### Первый фейдер
 
 1. Подключите MIDI-контроллер к компьютеру и убедитесь, что компьютер и пульт находятся в одной сети. Для сборки из исходников откройте Windows PowerShell в папке проекта и выполните `.\build.ps1`. Нужен .NET Framework 4.x с компилятором C#. Запустите **MR18-MIDI.exe**. Имя файла осталось от первой версии для MR18.
@@ -31,9 +33,9 @@ AIR MIDI Bridge позволяет управлять цифровым пуль�
 | Behringer XR16 | 16 | 1–8 |
 | Behringer XR12 | 12 | 1–4 |
 
-Предыдущую версию использовали на реальном MR18. Версия 0.5 beta проверена программными тестами и ещё ждёт проверки на самих пультах. **Gain управляет предусилителем физического входа.** Например, на XR16 можно менять громкость канала 12, а гейн доступен только для входов 1–8.
+Предыдущую версию использовали на реальном MR18. Пользователь подтвердил работу версии 0.5 beta на своём Behringer XR18. Остальные модели этой версии пока проверены программно. **Gain управляет предусилителем физического входа.** Например, на XR16 можно менять громкость канала 12, а гейн доступен только для входов 1–8.
 
-При подключении приложение запрашивает модель пульта через `/xinfo` по UDP на порту 10024. Для включения управления модель должна быть распознана, а все активные назначения должны ей подходить. X32, M32, WING и HD96 используют другие протоколы и пока не поддерживаются. В этой версии также нет управления посылами, возвратами и DCA, индикаторов уровня, обратной связи для подсветки кнопок и моторизованных фейдеров.
+При подключении приложение запрашивает модель пульта через `/xinfo` по UDP на порту 10024. Для включения управления модель должна быть распознана, а все активные назначения должны ей подходить. X32, M32, WING и HD96 используют другие протоколы и пока не поддерживаются. В этой версии также нет управления возвратами и DCA, индикаторов уровня, обратной связи для подсветки кнопок и моторизованных фейдеров.
 
 ### Для разработчиков
 
@@ -51,6 +53,8 @@ AIR MIDI Bridge позволяет управлять цифровым пуль�
 ## English
 
 AIR MIDI Bridge lets you control a Midas M AIR or Behringer X AIR mixer from a MIDI controller. You could map a slider to the vocal channel and use the button beside it to mute the singer’s mic between songs. The controller connects to your Windows PC, which sends OSC commands to the mixer over the network.
+
+In version 1.0.0, select Bus 1–6 on the right to mix monitors. Each bus master has Mute and Solo, both assignable via MIDI Learn.
 
 ### Map your first fader
 
@@ -71,9 +75,9 @@ Save your mappings to an XML profile for the next rehearsal. You can also assign
 | Behringer XR16 | 16 | 1–8 |
 | Behringer XR12 | 12 | 1–4 |
 
-An earlier version was used on a physical MR18. Version 0.5 beta has passed software tests and still needs testing on hardware. **Gain controls the physical input preamp.** On an XR16, for example, you can move the channel 12 fader, while preamp gain is available only on inputs 1–8.
+An earlier version was used on a physical MR18. A user confirmed version 0.5 beta works on their Behringer XR18. The other models have software-test coverage for this version. **Gain controls the physical input preamp.** On an XR16, for example, you can move the channel 12 fader, while preamp gain is available only on inputs 1–8.
 
-When you connect, the app checks the mixer model using `/xinfo` over UDP port 10024. Live control requires a recognized model and valid assignments for every enabled mapping. X32, M32, WING and HD96 use different protocols and are currently unsupported. This version also lacks sends, returns, DCA control, level meters, button LED feedback and motorized fader feedback.
+When you connect, the app checks the mixer model using `/xinfo` over UDP port 10024. Live control requires a recognized model and valid assignments for every enabled mapping. X32, M32, WING and HD96 use different protocols and are currently unsupported. This version also lacks returns, DCA control, level meters, button LED feedback and motorized fader feedback.
 
 ### For developers
 

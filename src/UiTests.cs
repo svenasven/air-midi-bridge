@@ -13,7 +13,7 @@ public static class UiTests {
  static object Call(object obj,string name,params object[] args){return obj.GetType().GetMethod(name,BindingFlags.NonPublic|BindingFlags.Instance).Invoke(obj,args);}
  public static void Run(){L.English=false;using(var form=new MainForm()){
   form.Show();Application.DoEvents();
-  Check(form.Text.EndsWith("0.5-beta"),"Version and construction");
+  Check(form.Text.EndsWith("1.0.0"),"Version and construction");
   Check(form.FormBorderStyle==FormBorderStyle.None,"Native light caption removed");
   Check(MainForm.ResizeHit(new Point(1,1),new Size(1200,800),6)==13&&MainForm.ResizeHit(new Point(1198,798),new Size(1200,800),6)==17,"Resize corners");
   Check(MainForm.ResizeHit(new Point(1,400),new Size(1200,800),6)==10&&MainForm.ResizeHit(new Point(600,798),new Size(1200,800),6)==15,"Resize edges");
@@ -55,6 +55,16 @@ public static class UiTests {
   Call(form,"SetLanguage",false,false);Application.DoEvents();
   Check(((Button)Get(form,"mixerTab")).Text=="Микшер"&&arm.Text=="ТЕСТОВЫЙ РЕЖИМ","Russian round trip");
   Check(editName.Text=="Микшер"&&Convert.ToString(mode.SelectedValue)==modeKey,"Round trip preserves pending edits");
+  Call(form,"ShowPage",false);
+  for(int bus=1;bus<=6;bus++){
+   form.GetType().GetField("monitorBus",BindingFlags.NonPublic|BindingFlags.Instance).SetValue(form,bus);
+   Call(form,"DirectLevel",0,.4);Call(form,"DirectLevel",8,.6);
+   Call(form,"DirectSwitch",8,"Mute");Call(form,"DirectSwitch",8,"Solo");
+   Check(sim["/bus/"+bus+"/mix/on"].Value==0 && sim["/-stat/solosw/"+(21+bus)].Value==1,"Monitor bus switches "+bus);
+   var send=new Mapping{Target="Send"+bus};var master=new Mapping{Target="Aux"+bus};
+   Check(send.Validate()==null && send.Address=="/ch/01/mix/0"+bus+"/level" && sim.ContainsKey(send.Address),"Monitor send "+bus);
+   Check(master.Validate()==null && master.Address=="/bus/"+bus+"/mix/fader" && sim.ContainsKey(master.Address) && MixerModel.Find("XR18").Supports(master.Address),"Monitor master "+bus);
+  }
   form.Close();
  }Console.WriteLine("TOTAL UI: "+checks+" passed. No real mixer was connected.");}
  static string gridColumn(MainForm form,string prop){var grid=(DataGridView)Get(form,"grid");foreach(DataGridViewColumn c in grid.Columns)if(c.DataPropertyName==prop)return c.HeaderText;return null;}

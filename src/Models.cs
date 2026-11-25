@@ -14,8 +14,8 @@ public sealed class MixerModel {
  public bool Supports(string path){
   var m=Regex.Match(path,@"^/(ch|headamp)/([0-9]{2})/");
   if(m.Success){int n=int.Parse(m.Groups[2].Value);return n>=1&&n<=(m.Groups[1].Value=="headamp"?Preamps:Channels);}
-  m=Regex.Match(path,@"^/-stat/solosw/([0-9]{2})$");if(m.Success){int n=int.Parse(m.Groups[1].Value);return n>=1&&n<=Channels;}
-  return path=="/lr/mix/fader";
+  m=Regex.Match(path,@"^/-stat/solosw/([0-9]{2})$");if(m.Success){int n=int.Parse(m.Groups[1].Value);return (n>=1&&n<=Channels)||(n>=22&&n<=27);}
+  return path=="/lr/mix/fader"||Regex.IsMatch(path,@"^/bus/[1-6]/mix/(fader|on)$");
  }
 }
 }
