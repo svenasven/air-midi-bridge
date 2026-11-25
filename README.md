@@ -12,7 +12,7 @@
 
 AIR MIDI Bridge позволяет управлять цифровым пультом Midas M AIR или Behringer X AIR с MIDI-контроллера. Например, можно назначить ползунок на громкость вокала, а соседнюю кнопку — на отключение того же канала. Контроллер подключается к компьютеру с Windows, а компьютер отправляет команды пульту по сети через OSC.
 
-В версии 1.0.0 выберите Bus 1–6 справа для управления монитором. На мастере шины доступны Mute и Solo. Обе кнопки можно назначить через MIDI Learn.
+С MIDI-контроллера можно менять посыл отдельного канала в AUX 1–6 и общую громкость каждой шины. Например, CH → AUX 2 регулирует уровень выбранного канала во втором мониторе, а AUX 2 Master — громкость всего монитора. На экране выберите Bus 1–6 справа для управления монитором. На мастере шины доступны Mute и Solo. Обе кнопки можно назначить через MIDI Learn.
 
 ### Первый фейдер
 
@@ -54,7 +54,7 @@ AIR MIDI Bridge позволяет управлять цифровым пуль�
 
 AIR MIDI Bridge lets you control a Midas M AIR or Behringer X AIR mixer from a MIDI controller. You could map a slider to the vocal channel and use the button beside it to mute the singer’s mic between songs. The controller connects to your Windows PC, which sends OSC commands to the mixer over the network.
 
-In version 1.0.0, select Bus 1–6 on the right to mix monitors. Each bus master has Mute and Solo, both assignable via MIDI Learn.
+You can control AUX 1–6 from MIDI, including individual channel sends and each bus master level. For example, CH → AUX 2 adjusts one channel in the second monitor mix, while AUX 2 Master adjusts the whole mix. On screen, select Bus 1–6 on the right to mix monitors. Each bus master has Mute and Solo, both assignable via MIDI Learn.
 
 ### Map your first fader
 
