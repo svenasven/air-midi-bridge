@@ -2,6 +2,10 @@
 
 [Русский](#ru) · [English](#en)
 
+![Mixer in test mode](docs/screenshots/mixer-en.png)
+
+![Controllers and MIDI Learn](docs/screenshots/controllers-en.png)
+
 <a id="ru"></a>
 
 ## Русский
