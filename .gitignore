@@ -1,0 +1,10 @@
+*.exe
+*.pdb
+*.zip
+ui-language.txt
+startup-error.txt
+*.tmp
+*-RESULTS.txt
+my-controller.xml
+profiles/
+.vs/
